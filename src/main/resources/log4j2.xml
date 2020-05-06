@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration packages="biz.paluch.logging.gelf.log4j2, com.splunk.logging">
+
+    <!--These are some of the loggers you can enable. 
+        There are several more you can find in the documentation. 
+        Besides this log4j configuration, you can also use Java VM environment variables
+        to enable other logs like network (-Djavax.net.debug=ssl or all) and 
+        Garbage Collector (-XX:+PrintGC). These will be append to the console, so you will 
+        see them in the mule_ee.log file. -->
+
+    <Appenders>
+        <RollingFile name="file" fileName="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}elk-demo-gelf-appender.log" 
+                 filePattern="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}elk-demo-gelf-appender-%i.log">
+            <PatternLayout pattern="%-5p %d [%t] [event: %X{correlationId}] %c: %m%n" />
+            <SizeBasedTriggeringPolicy size="10 MB" />
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+        
+        
+        <!-- ELK - GELF Appender -->
+        
+        <Gelf name="gelf" host="tcp:ec2-3-83-4-98.compute-1.amazonaws.com" port="12201" version="1.1" extractStackTrace="true"
+              filterStackTrace="true" mdcProfiling="true" includeFullMdc="true" maximumMessageSize="8192"
+              originHost="%host{fqdn}">
+            <Field name="timestamp" pattern="%d{dd MMM yyyy HH:mm:ss,SSS}" />
+            <Field name="level" pattern="%level" />
+            <Field name="simpleClassName" pattern="%C{1}" />
+            <Field name="className" pattern="%C" />
+            <Field name="server.host" pattern="%host" />
+            <Field name="server.fqdn" pattern="%host{fqdn}" />
+            
+            <!-- This is a static field -->
+            <Field name="fieldName2" literal="fieldValue2" />
+        </Gelf>
+        
+        <!-- ELK - TCP Appender -->
+        <Socket name="elk-tcp" host="ec2-3-83-4-98.compute-1.amazonaws.com" port="5010">
+	        <JsonLayout compact="true" eventEol="true" />
+        </Socket>
+
+		<!-- Splunk - HTTP with Json Layout -->
+        <SplunkHttp name="splunk-http-json" url="http://ec2-54-88-66-114.compute-1.amazonaws.com:8088" token="4f51f9d1-b637-4ec0-b6e9-fd560006f7f6" disableCertificateValidation="true">
+	       <JsonLayout complete="true" compact="false" >
+		       <KeyValuePair key="timestamp" value="$${date:yyyy-MM-dd'T'HH:mm:ss.SSSZ}" />
+	       </JsonLayout>
+	   </SplunkHttp>
+    
+	   <!-- Splunk - HTTP with standard pattern Layout -->
+	   <SplunkHttp name="splunk-http-plain" url="http://ec2-54-88-66-114.compute-1.amazonaws.com:8088" token="4f51f9d1-b637-4ec0-b6e9-fd560006f7f6" disableCertificateValidation="true">
+	       <PatternLayout pattern="HTTP >>>  %-5p %d [%t] [event: %X{correlationId}] %c: %m%n" />
+	   </SplunkHttp>
+	    
+	   <!-- Splunk - SocketAppender -->
+	   <Socket name="splunk-tcp" host="ec2-54-88-66-114.compute-1.amazonaws.com" port="9088">
+	        <PatternLayout pattern="TCP >>>  %-5p %d [%t] [event: %X{correlationId}] %c: %m%n" />
+        </Socket>
+        
+    </Appenders>
+    <Loggers>
+        
+        <!-- Http Logger shows wire traffic on DEBUG. -->
+        <!--AsyncLogger name="org.mule.service.http.impl.service.HttpMessageLogger" level="DEBUG" /-->
+        <AsyncLogger name="org.mule.service.http" level="WARN"/>
+        <AsyncLogger name="org.mule.extension.http" level="WARN"/>
+    
+		<!-- Mule logger -->        
+        <AsyncLogger name="org.mule.runtime.core.internal.processor.LoggerMessageProcessor" level="INFO"/>
+ 
+        <AsyncRoot level="INFO">
+            
+            <AppenderRef ref="gelf" /> 
+            <AppenderRef ref="elk-tcp" /> 
+            
+             
+            <AppenderRef ref="splunk-http-json" />
+            <AppenderRef ref="splunk-http-plain" />
+            <AppenderRef ref="splunk-tcp" />
+            
+            
+        </AsyncRoot>
+    </Loggers>
+</Configuration>

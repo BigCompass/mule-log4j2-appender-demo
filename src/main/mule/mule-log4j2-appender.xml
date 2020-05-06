@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<flow name="elk-demo-gelf-appenderFlow" doc:id="6e2d8c44-cf1a-4d40-b75e-d1fff43a4c1c" >
+		<scheduler doc:name="Scheduler" doc:id="33037a66-adf7-4098-81d1-815acf5a2d95" >
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="a871014f-c511-452f-a546-9df4ee047bdd" message="log content"/>
+	</flow>
+</mule>
